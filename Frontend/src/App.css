@@ -1,0 +1,17 @@
+@import "tailwindcss";
+/* Hide share button */
+.plyr__control[data-plyr="share"],
+button[data-plyr="share"],
+.plyr__menu__container button[data-plyr="share"] {
+    display: none !important;
+}
+
+/* Hide info ("i") YouTube button */
+.ytp-button[data-tooltip-target-id="ytp-info-button"],
+.ytp-info-panel,
+.ytp-cards-button,
+.ytp-button[data-title-no-tooltip="More info"],
+.ytp-endscreen-previous,
+.ytp-iv-player-content {
+    display: none !important;
+}
