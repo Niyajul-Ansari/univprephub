@@ -33,9 +33,11 @@ router.get(
 
         res.cookie("token", token, {
             httpOnly: true,
-            sameSite: "lax",
-            maxAge: 60 * 60 * 1000,
+            secure: true,        // 🔑 HTTPS required
+            sameSite: "none",    // 🔑 cross-site cookie allow
+            maxAge: 60 * 60 * 1000
         });
+
 
         // ✅ env-based redirect
         if (req.user.role === "admin") {
