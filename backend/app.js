@@ -13,11 +13,25 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
 
-// ✅ CORS (env based)
+const allowedOrigins = [
+    "http://localhost:5173",
+    "https://univprephub.onrender.com"
+];
+
 app.use(cors({
-    origin: process.env.FRONTEND_URL,
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error("Not allowed by CORS"));
+        }
+    },
     credentials: true
 }));
+
+// 🔑 Preflight request support (VERY IMPORTANT)
+app.options("*", cors());
+
 
 // Passport Init
 app.use(passport.initialize());
