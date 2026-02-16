@@ -29,8 +29,6 @@ app.use(cors({
     credentials: true
 }));
 
-// 🔑 Preflight request support (VERY IMPORTANT)
-app.options("*", cors());
 
 
 // Passport Init
