@@ -12,6 +12,7 @@ import Ebooks from "../Component/Admin/Admin_User/Ebooks";
 import Notes from "../Component/Admin/Admin_User/Notes";
 import PremiumContent from "../Component/Admin/Admin_User/Premium_content";
 import AssignSubjects from "../Component/Admin/Admin_User/AssignSubjects";
+import UserDashboard from "../Component/User/UserDashboard";
 
 function AdminWrapper() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -45,6 +46,7 @@ export default function App() {
     return (
         <ProtectedAdmin>
             <Routes>
+                <Route path="dashboard" element={<UserDashboard />} />
                 <Route element={<AdminWrapper />}>
                     <Route path="/" element={<Admindash />} />
                     <Route path="user" element={<Users />} />
@@ -53,6 +55,7 @@ export default function App() {
                     <Route path="notes" element={<Notes />} />
                     <Route path="premium_content" element={<PremiumContent />} />
                     <Route path="assign_subject" element={<AssignSubjects/>} />
+                   
 
                 </Route>
             </Routes>

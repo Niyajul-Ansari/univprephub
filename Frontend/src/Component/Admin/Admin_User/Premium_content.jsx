@@ -7,7 +7,6 @@ const SUBJECTS = [
     "MCQ Bucket",
     "Quick Course",
     "Crash Course (50 Days)",
-    "Current Affairs & GK GS",
     "Indian Polity",
     "Indian History",
     "Indian Geography",
@@ -45,19 +44,26 @@ export default function PremiumContent() {
         pdf: null
     });
 
-    /* ========== FETCH ========== */
+    /* ================= FETCH ================= */
     const getContents = async () => {
         try {
             const res = await fetch(
                 `${BACKEND_URL}/admin/premium/all`,
                 { credentials: "include" }
             );
+
             const data = await res.json();
-            if (data.success) {
-                setContents(data.data);
+            console.log("FULL API RESPONSE:", data);
+
+            // Backend direct array bhej raha hai
+            if (Array.isArray(data)) {
+                setContents(data);
+            } else {
+                setContents([]);
             }
         } catch (err) {
-            console.error(err);
+            console.error("Fetch error:", err);
+            setContents([]);
         }
     };
 
@@ -65,7 +71,7 @@ export default function PremiumContent() {
         getContents();
     }, []);
 
-    /* ========== POPUP ========== */
+    /* ================= POPUP ================= */
     const openPopup = (item = null) => {
         if (item) {
             setForm({ ...item, pdf: null });
@@ -82,7 +88,7 @@ export default function PremiumContent() {
 
     const closePopup = () => setPopup(null);
 
-    /* ========== SUBMIT ========== */
+    /* ================= SUBMIT ================= */
     const submitContent = async () => {
         if (!form.subject || !form.topicName) {
             alert("Subject & Topic required");
@@ -118,12 +124,12 @@ export default function PremiumContent() {
             } else {
                 alert("Failed");
             }
-        } catch (err) {
+        } catch {
             alert("Network error");
         }
     };
 
-    /* ========== TOGGLE HIDE ========== */
+    /* ================= TOGGLE ================= */
     const toggleHide = async (id) => {
         await fetch(
             `${BACKEND_URL}/admin/premium/toggle/${id}`,
@@ -137,6 +143,7 @@ export default function PremiumContent() {
 
     return (
         <>
+            {/* ================= TABLE ================= */}
             <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
                 <div className="flex justify-between mb-4">
                     <h2 className="text-xl font-semibold">
@@ -150,86 +157,95 @@ export default function PremiumContent() {
                     </button>
                 </div>
 
-                <table className="w-full text-sm">
-                    <thead className="bg-gray-100">
-                        <tr>
-                            <th>Subject</th>
-                            <th>Topic</th>
-                            <th>Video</th>
-                            <th>PDF</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
+                <p className="text-sm text-gray-500 mb-2">
+                    Total records: {contents.length}
+                </p>
 
-                    <tbody>
-                        {contents.map((c) => (
-                            <tr
-                                key={c._id}
-                                className="border-b text-center"
-                            >
-                                <td>{c.subject}</td>
-                                <td>{c.topicName}</td>
-
-                                <td>
-                                    {c.videoLink ? (
-                                        <a
-                                            href={c.videoLink}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                        >
-                                            Video
-                                        </a>
-                                    ) : "—"}
-                                </td>
-
-                                <td>
-                                    {c.pdfLink ? (
-                                        <a
-                                            href={`${BACKEND_URL}/${c.pdfLink}`}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                        >
-                                            PDF
-                                        </a>
-                                    ) : "—"}
-                                </td>
-
-                                <td>
-                                    <span
-                                        className={`px-2 py-1 rounded-full text-xs ${c.isHidden
-                                                ? "bg-red-100 text-red-600"
-                                                : "bg-green-100 text-green-600"
-                                            }`}
-                                    >
-                                        {c.isHidden
-                                            ? "Hidden"
-                                            : "Visible"}
-                                    </span>
-                                </td>
-
-                                <td className="flex gap-2 justify-center py-2">
-                                    <button
-                                        onClick={() => openPopup(c)}
-                                        className="px-3 py-1 bg-blue-100 text-blue-600 rounded"
-                                    >
-                                        Edit
-                                    </button>
-
-                                    <button
-                                        onClick={() => toggleHide(c._id)}
-                                        className="px-3 py-1 bg-gray-200 rounded"
-                                    >
-                                        Toggle
-                                    </button>
-                                </td>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm border-collapse">
+                        <thead className="bg-gray-100">
+                            <tr>
+                                <th>Subject</th>
+                                <th>Topic</th>
+                                <th>Video</th>
+                                <th>PDF</th>
+                                <th>Status</th>
+                                <th>Action</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+
+                        <tbody>
+                            {contents.map((c) => (
+                                <tr key={c._id} className="border-b text-center">
+                                    <td>{c.subject}</td>
+                                    <td>{c.topicName}</td>
+
+                                    {/* VIDEO — NOT CLICKABLE */}
+                                    <td>
+                                        {c.videoLink && c.videoLink.trim() !== "" ? (
+                                            <span className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full">
+                                                Available
+                                            </span>
+                                        ) : (
+                                            <span className="text-gray-400">—</span>
+                                        )}
+                                    </td>
+
+                                    {/* PDF — NOT CLICKABLE */}
+                                    <td>
+                                        {c.pdfLink && c.pdfLink.trim() !== "" ? (
+                                            <span className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full">
+                                                Available
+                                            </span>
+                                        ) : (
+                                            <span className="text-gray-400">—</span>
+                                        )}
+                                    </td>
+                                    <td>
+                                        <span
+                                            className={`px-2 py-1 rounded-full text-xs ${c.isHidden
+                                                    ? "bg-red-100 text-red-600"
+                                                    : "bg-green-100 text-green-600"
+                                                }`}
+                                        >
+                                            {c.isHidden ? "Hidden" : "Visible"}
+                                        </span>
+                                    </td>
+
+                                    <td className="flex gap-2 justify-center py-2">
+                                        <button
+                                            onClick={() => openPopup(c)}
+                                            className="px-3 py-1 bg-blue-100 text-blue-600 rounded"
+                                        >
+                                            Edit
+                                        </button>
+
+                                        <button
+                                            onClick={() => toggleHide(c._id)}
+                                            className="px-3 py-1 bg-gray-200 rounded"
+                                        >
+                                            Toggle
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+
+                            {contents.length === 0 && (
+                                <tr>
+                                    <td
+                                        colSpan="6"
+                                        className="py-6 text-gray-500 text-center"
+                                    >
+                                        No premium content found
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
-            {/* POPUP */}
+            {/* ================= POPUP ================= */}
             {popup && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
                     <div className="bg-white p-6 rounded-xl w-96 relative">

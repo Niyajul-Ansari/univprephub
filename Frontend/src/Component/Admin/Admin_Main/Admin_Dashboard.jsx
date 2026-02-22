@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import ActionCard from "./ActionCard";
 import InfoCard from "./InfoCard";
 
@@ -7,6 +8,8 @@ import {
 } from "../../../Data/AdminData";
 
 export default function Dashboard() {
+    const navigate = useNavigate();
+
     return (
         <div className="space-y-6">
             {/* Welcome */}
@@ -37,7 +40,11 @@ export default function Dashboard() {
                         <ActionCard
                             key={action.id}
                             title={action.title}
-                            onClick={() => console.log(action.title)}
+                            onClick={() => {
+                                if (action.path) {
+                                    navigate(`/admin/${action.path}`);
+                                }
+                            }}
                         />
                     ))}
                 </div>
