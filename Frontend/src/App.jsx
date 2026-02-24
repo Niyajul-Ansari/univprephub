@@ -3,6 +3,7 @@ import WebLayout from "./Dashboard/WebLayout";
 import Admin from "./Dashboard/Admin";
 import UserDashboard from "./Component/User/UserDashboard";
 import ProtectedUser from "./Component/User/ProtectedUser";
+import Profile from "./Component/User/Profie";
 
 function App() {
   return (
@@ -18,7 +19,8 @@ function App() {
         path="/user-dashboard/*"
         element={
           <ProtectedUser>
-            <UserDashboard />
+            {/* <UserDashboard /> */}
+            <Profile/>
           </ProtectedUser>
         }
       />
