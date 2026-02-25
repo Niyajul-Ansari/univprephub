@@ -1,7 +1,6 @@
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const User = require("../models/User");
-const { v4: uuidv4 } = require("uuid");
 
 /* ===============================
    GENERATE UNIQUE 5 DIGIT SECRET
@@ -27,6 +26,7 @@ passport.use(
         async (accessToken, refreshToken, profile, done) => {
             try {
                 const email = profile.emails[0].value;
+                const avatar = profile.photos?.[0]?.value;
 
                 let user = await User.findOne({ email });
 
@@ -35,13 +35,16 @@ passport.use(
                         name: profile.displayName,
                         email,
                         googleId: profile.id,
-
-                        // 🔐 REQUIRED FIELDS
+                        avatar,
                         secretCode: await generateSecretCode(),
-                        token: uuidv4(),
                         role: "user",
-                        isApproved: false // admin will approve later
+                        isApproved: true
                     });
+                } else {
+                    if (!user.avatar && avatar) {
+                        user.avatar = avatar;
+                        await user.save();
+                    }
                 }
 
                 return done(null, user);
@@ -53,9 +56,13 @@ passport.use(
     )
 );
 
-// session not used, but safe to keep
+// session not used
 passport.serializeUser((user, done) => done(null, user.id));
 passport.deserializeUser(async (id, done) => {
-    const user = await User.findById(id);
-    done(null, user);
+    try {
+        const user = await User.findById(id);
+        done(null, user);
+    } catch (err) {
+        done(err, null);
+    }
 });

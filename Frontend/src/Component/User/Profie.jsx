@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import Course from "./Course";
 
 const API_URL = import.meta.env.VITE_BACKEND_URL;
-// example: http://localhost:5000/api
 
 export default function Profile() {
     const [activeComponent, setActiveComponent] = useState("profile");
@@ -16,7 +15,7 @@ export default function Profile() {
             try {
                 const res = await fetch(`${API_URL}/user/me`, {
                     method: "GET",
-                    credentials: "include" // 🔐 cookie JWT
+                    credentials: "include"
                 });
 
                 const data = await res.json();
@@ -61,7 +60,8 @@ export default function Profile() {
         );
     }
 
-    const isEbookSubscriber = user?.permissions?.notes?.access;
+    // ✅ FIXED: NOTES → EBOOK (NO EXPIRY)
+    const isEbookSubscriber = user?.permissions?.ebook?.access === true;
 
     return (
         <div className="min-h-screen bg-slate-200">
@@ -108,7 +108,9 @@ export default function Profile() {
                             </button>
                         </div>
 
-                        <p className="mt-4 text-gray-600">You are logged in!</p>
+                        <p className="mt-4 text-gray-600">
+                            You are logged in!
+                        </p>
 
                         <div className="flex flex-col md:flex-row items-center gap-6 mt-6">
                             {/* PROFILE IMAGE */}
@@ -121,14 +123,24 @@ export default function Profile() {
                             {/* USER INFO */}
                             <div className="space-y-2">
                                 <p className="text-lg font-medium">
-                                    Name: <span className="font-normal">{user.name}</span>
+                                    Name:{" "}
+                                    <span className="font-normal">
+                                        {user.name}
+                                    </span>
                                 </p>
+
                                 <p className="text-gray-700">
                                     Email: {user.email}
                                 </p>
+
                                 <p className="flex items-center gap-2 text-gray-700">
                                     Ebook Subscription:
-                                    <span className={`font-bold ${isEbookSubscriber ? "text-green-600" : "text-red-500"}`}>
+                                    <span
+                                        className={`font-bold ${isEbookSubscriber
+                                                ? "text-green-600"
+                                                : "text-red-500"
+                                            }`}
+                                    >
                                         {isEbookSubscriber ? "✔" : "✖"}
                                     </span>
                                 </p>

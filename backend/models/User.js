@@ -5,20 +5,25 @@ const userSchema = new mongoose.Schema({
     email: { type: String, unique: true },
     password: String,
     googleId: String,
+    avatar: String,
 
-    // 🔐 UNIQUE 5 DIGIT SECRET
     secretCode: { type: String, index: true },
 
-    // 🔑 MAIN APPROVAL = VIDEO + LOGIN
+    // 🔥 VIDEO + DASHBOARD ACCESS
     isApproved: { type: Boolean, default: false },
+
+    // 🎯 ASSIGNED COURSE FOR VIDEO/PDF
+    assignedCourse: {
+        type: String,
+        default: null
+    },
 
     role: { type: String, default: "user" },
 
-    // 📚 ONLY PREMIUM NOTES NEED EXTRA ACCESS
+    // 📘 EBOOK ACCESS (RENAMED)
     permissions: {
-        notes: {
-            access: { type: Boolean, default: false },
-            courses: [String]
+        ebook: {
+            access: { type: Boolean, default: false }
         }
     }
 });

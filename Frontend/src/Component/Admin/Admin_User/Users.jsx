@@ -23,9 +23,8 @@ const COURSES = [
 
 export default function Users() {
     const [users, setUsers] = useState([]);
-    const [selectedUser, setSelectedUser] = useState(null);
-
     const [detailsPopup, setDetailsPopup] = useState(null);
+    const [selectedUser, setSelectedUser] = useState(null);
     const [popup, setPopup] = useState(null);
 
     const [course, setCourse] = useState("");
@@ -36,10 +35,19 @@ export default function Users() {
     const getUsers = async () => {
         try {
             const res = await fetch(`${BACKEND_URL}/admin/users`, {
-                credentials: "include"
+                credentials: "include",
             });
             const data = await res.json();
-            if (data.success) setUsers(data.users);
+
+            if (data.success) {
+                const safeUsers = data.users.map((u) => ({
+                    ...u,
+                    permissions: u.permissions || {
+                        ebook: { access: false },
+                    },
+                }));
+                setUsers(safeUsers);
+            }
         } catch (err) {
             console.error("Fetch users error:", err);
         }
@@ -51,17 +59,21 @@ export default function Users() {
 
     /* ================= DETAILS ================= */
     const openDetails = (user) => {
-        setSelectedUser(user);
-        setDetailsPopup(user);
+        const freshUser = users.find((u) => u._id === user._id);
+        setSelectedUser(freshUser || user);
+        setDetailsPopup(freshUser || user);
     };
 
     const closeDetails = () => setDetailsPopup(null);
 
     /* ================= ACCESS POPUP ================= */
     const openPopup = (type, action) => {
+        setDetailsPopup(null);
+
         setEmailInput(selectedUser?.email || "");
         setSecretInput(selectedUser?.secretCode || "");
         setCourse("");
+
         setPopup({ type, action });
     };
 
@@ -72,6 +84,7 @@ export default function Users() {
         setCourse("");
     };
 
+    /* ================= SUBMIT ================= */
     const submitAccess = async () => {
         if (!popup) return;
 
@@ -85,37 +98,48 @@ export default function Users() {
             return;
         }
 
+        if (popup.action === "grant" && popup.type === "video" && !course) {
+            alert("Please select a course to assign with premium access");
+            return;
+        }
+
         let endpoint = "";
-        let body = { email: emailInput, secretCode: secretInput };
+        let body = {
+            email: emailInput,
+            secretCode: secretInput,
+        };
 
-        if (popup.action === "grant" && popup.type === "video")
+        // PREMIUM (VIDEO)
+        if (popup.action === "grant" && popup.type === "video") {
             endpoint = "grant-premium";
-
-        if (popup.action === "grant" && popup.type === "notes") {
-            endpoint = "grant-access";
             body.course = course;
         }
 
-        if (popup.action === "take" && popup.type === "video")
+        if (popup.action === "take" && popup.type === "video") {
             endpoint = "take-premium";
+        }
 
-        if (popup.action === "take" && popup.type === "notes")
+        // NOTES → EBOOK (LOGIC FIX ONLY)
+        if (popup.action === "grant" && popup.type === "notes") {
+            endpoint = "grant-access";
+        }
+
+        if (popup.action === "take" && popup.type === "notes") {
             endpoint = "take-access";
+        }
 
-        if (!endpoint) return alert("Invalid action");
+        if (!endpoint) return;
 
         try {
-            const res = await fetch(
-                `${BACKEND_URL}/admin/${endpoint}`,
-                {
-                    method: "POST",
-                    credentials: "include",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(body)
-                }
-            );
+            const res = await fetch(`${BACKEND_URL}/admin/${endpoint}`, {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+            });
 
             const data = await res.json();
+
             if (data.success) {
                 alert(data.message || "Success");
                 closePopup();
@@ -123,7 +147,7 @@ export default function Users() {
             } else {
                 alert(data.message || "Operation failed");
             }
-        } catch (err) {
+        } catch {
             alert("Network error");
         }
     };
@@ -144,10 +168,7 @@ export default function Users() {
                     </thead>
                     <tbody>
                         {users.map((u) => (
-                            <tr
-                                key={u._id}
-                                className="border-b hover:bg-gray-50"
-                            >
+                            <tr key={u._id} className="border-b hover:bg-gray-50">
                                 <td className="px-4 py-3">{u.name}</td>
                                 <td className="px-4 py-3">{u.email}</td>
 
@@ -158,20 +179,18 @@ export default function Users() {
                                                 : "bg-red-100 text-red-600"
                                             }`}
                                     >
-                                        {u.isApproved
-                                            ? "Enabled"
-                                            : "Disabled"}
+                                        {u.isApproved ? "Enabled" : "Disabled"}
                                     </span>
                                 </td>
 
                                 <td className="px-4 py-3 text-center">
                                     <span
-                                        className={`px-2 py-1 rounded-full text-xs ${u.permissions?.notes?.access
+                                        className={`px-2 py-1 rounded-full text-xs ${u.permissions?.ebook?.access
                                                 ? "bg-green-100 text-green-600"
                                                 : "bg-red-100 text-red-600"
                                             }`}
                                     >
-                                        {u.permissions?.notes?.access
+                                        {u.permissions?.ebook?.access
                                             ? "Enabled"
                                             : "Disabled"}
                                     </span>
@@ -242,14 +261,18 @@ export default function Users() {
                         </button>
 
                         <img
-                            src="https://i.pravatar.cc/120"
-                            className="mx-auto rounded-full mb-3"
+                            src={
+                                detailsPopup.avatar ||
+                                "https://i.pravatar.cc/120"
+                            }
+                            className="mx-auto rounded-full mb-3 w-24 h-24 object-cover"
                             alt="profile"
                         />
 
                         <h3 className="font-semibold text-lg">
                             {detailsPopup.name}
                         </h3>
+
                         <p className="text-gray-600 text-sm">
                             {detailsPopup.email}
                         </p>
@@ -259,6 +282,13 @@ export default function Users() {
                             <span className="tracking-widest">
                                 {detailsPopup.secretCode || "—"}
                             </span>
+                        </div>
+
+                        <div className="mt-3 text-sm">
+                            <b>Assigned Course:</b>
+                            <p className="text-gray-600 mt-1">
+                                {detailsPopup.assignedCourse || "No course assigned"}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -287,9 +317,7 @@ export default function Users() {
 
                         <input
                             value={emailInput}
-                            onChange={(e) =>
-                                setEmailInput(e.target.value)
-                            }
+                            onChange={(e) => setEmailInput(e.target.value)}
                             placeholder="Email"
                             className="w-full mb-2 p-2 border rounded"
                         />
@@ -298,26 +326,20 @@ export default function Users() {
                             value={secretInput}
                             onChange={(e) =>
                                 setSecretInput(
-                                    e.target.value
-                                        .replace(/\D/g, "")
-                                        .slice(0, 5)
+                                    e.target.value.replace(/\D/g, "").slice(0, 5)
                                 )
                             }
                             placeholder="5 digit secret"
                             className="w-full mb-2 p-2 border rounded"
                         />
 
-                        {popup.action === "grant" && (
+                        {popup.action === "grant" && popup.type === "video" && (
                             <select
                                 value={course}
-                                onChange={(e) =>
-                                    setCourse(e.target.value)
-                                }
+                                onChange={(e) => setCourse(e.target.value)}
                                 className="w-full mb-3 p-2 border rounded"
                             >
-                                <option value="">
-                                    Select Course
-                                </option>
+                                <option value="">Select Course</option>
                                 {COURSES.map((c) => (
                                     <option key={c} value={c}>
                                         {c}

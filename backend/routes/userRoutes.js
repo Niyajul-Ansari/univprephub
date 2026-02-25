@@ -10,16 +10,25 @@ router.get("/me", auth, (req, res) => {
             id: req.user._id,
             name: req.user.name,
             email: req.user.email,
-            avatar: req.user.avatar || "https://i.pravatar.cc/150?img=12"
+            avatar: req.user.avatar || "https://i.pravatar.cc/150?img=12",
+            assignedCourse: req.user.assignedCourse
         }
     });
 });
 
-/* ========== USER PREMIUM CONTENT (🔥 REQUIRED) ========== */
+/* ========== USER PREMIUM CONTENT (COURSE BASED) ========== */
 router.get("/premium", auth, async (req, res) => {
     try {
+        if (!req.user.assignedCourse) {
+            return res.json({
+                success: true,
+                data: []
+            });
+        }
+
         const data = await PremiumContent.find({
-            isHidden: false
+            isHidden: false,
+            course: req.user.assignedCourse
         }).sort({ createdAt: -1 });
 
         res.json({

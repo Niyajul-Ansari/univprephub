@@ -24,86 +24,8 @@ router.get("/users", authMiddleware, adminMiddleware, async (req, res) => {
     res.json({ success: true, users });
 });
 
-/* ================= GRANT PREMIUM ACCESS (VIDEO + DASHBOARD) ================= */
+/* ================= GRANT PREMIUM (VIDEO + COURSE) ================= */
 router.post("/grant-premium", authMiddleware, adminMiddleware, async (req, res) => {
-    try {
-        const { email, secretCode } = req.body;
-
-        if (!email || !secretCode) {
-            return res.json({
-                success: false,
-                message: "Email & secret code required"
-            });
-        }
-
-        const user = await User.findOne({ email, secretCode });
-        if (!user) {
-            return res.json({
-                success: false,
-                message: "Invalid email or secret code"
-            });
-        }
-
-        // 🔥 MAIN APPROVAL
-        user.isApproved = true;
-
-        await user.save();
-
-        return res.json({
-            success: true,
-            message: "Premium access granted. User can access dashboard & videos."
-        });
-
-    } catch (err) {
-        console.log(err);
-        return res.status(500).json({
-            success: false,
-            message: "Error granting premium access"
-        });
-    }
-});
-
-/* ================= TAKE PREMIUM ACCESS (VIDEO) ================= */
-router.post("/take-premium", authMiddleware, adminMiddleware, async (req, res) => {
-    try {
-        const { email, secretCode } = req.body;
-
-        if (!email || !secretCode) {
-            return res.json({
-                success: false,
-                message: "Email & secret code required"
-            });
-        }
-
-        const user = await User.findOne({ email, secretCode });
-        if (!user) {
-            return res.json({
-                success: false,
-                message: "Invalid email or secret code"
-            });
-        }
-
-        // 🔥 MAIN VIDEO REVOKE
-        user.isApproved = false;
-
-        await user.save();
-
-        return res.json({
-            success: true,
-            message: "Premium (Video) access removed"
-        });
-
-    } catch (err) {
-        console.log(err);
-        return res.status(500).json({
-            success: false,
-            message: "Error removing premium access"
-        });
-    }
-});
-
-/* ================= GRANT PREMIUM NOTES ================= */
-router.post("/grant-access", authMiddleware, adminMiddleware, async (req, res) => {
     try {
         const { email, secretCode, course } = req.body;
 
@@ -122,61 +44,97 @@ router.post("/grant-access", authMiddleware, adminMiddleware, async (req, res) =
             });
         }
 
-        user.permissions.notes.access = true;
+        user.isApproved = true;
+        user.assignedCourse = course;
 
-        if (!user.permissions.notes.courses.includes(course)) {
-            user.permissions.notes.courses.push(course);
-        }
-
-        user.markModified("permissions");
         await user.save();
 
         res.json({
             success: true,
-            message: "Premium Notes access granted"
+            message: "Premium access granted with course"
         });
 
     } catch (err) {
         console.log(err);
-        res.status(500).json({
-            success: false,
-            message: "Error granting notes access"
-        });
+        res.status(500).json({ success: false });
     }
 });
 
-/* ================= TAKE PREMIUM NOTES ================= */
+/* ================= TAKE PREMIUM (VIDEO) ================= */
+router.post("/take-premium", authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const { email, secretCode } = req.body;
+
+        const user = await User.findOne({ email, secretCode });
+        if (!user) {
+            return res.json({ success: false });
+        }
+
+        user.isApproved = false;
+        user.assignedCourse = null;
+
+        await user.save();
+
+        res.json({
+            success: true,
+            message: "Premium access removed"
+        });
+
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ success: false });
+    }
+});
+
+/* ================= GRANT EBOOK ACCESS ================= */
+router.post("/grant-access", authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const { email, secretCode } = req.body;
+
+        const user = await User.findOne({ email, secretCode });
+        if (!user) {
+            return res.json({ success: false });
+        }
+
+        user.permissions.ebook.access = true;
+        user.markModified("permissions");
+
+        await user.save();
+
+        res.json({
+            success: true,
+            message: "Ebook access granted"
+        });
+
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ success: false });
+    }
+});
+
+/* ================= TAKE EBOOK ACCESS ================= */
 router.post("/take-access", authMiddleware, adminMiddleware, async (req, res) => {
     try {
         const { email, secretCode } = req.body;
 
         const user = await User.findOne({ email, secretCode });
         if (!user) {
-            return res.json({
-                success: false,
-                message: "Invalid email or secret code"
-            });
+            return res.json({ success: false });
         }
 
-        user.permissions.notes = {
-            access: false,
-            courses: []
-        };
-
+        user.permissions.ebook.access = false;
         user.markModified("permissions");
+
         await user.save();
 
         res.json({
             success: true,
-            message: "Premium Notes access removed"
+            message: "Ebook access removed"
         });
 
     } catch (err) {
         console.log(err);
-        res.status(500).json({
-            success: false,
-            message: "Error removing notes access"
-        });
+        res.status(500).json({ success: false });
     }
 });
 
