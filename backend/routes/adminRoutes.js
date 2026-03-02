@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const User = require("../models/User");
+const PremiumContent = require("../models/PremiumContent");
 const authMiddleware = require("../middlewares/authMiddleware");
 const adminMiddleware = require("../middlewares/adminMiddleware");
 
@@ -24,6 +25,30 @@ router.get("/users", authMiddleware, adminMiddleware, async (req, res) => {
     res.json({ success: true, users });
 });
 
+/* ================= ADMIN: GET ALL PREMIUM CONTENT ================= */
+router.get(
+    "/premium-content",
+    authMiddleware,
+    adminMiddleware,
+    async (req, res) => {
+        try {
+            const data = await PremiumContent.find()
+                .sort({ createdAt: -1 });
+
+            res.json({
+                success: true,
+                data
+            });
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({
+                success: false,
+                message: "Server error"
+            });
+        }
+    }
+);
+
 /* ================= GRANT PREMIUM (VIDEO + COURSE) ================= */
 router.post("/grant-premium", authMiddleware, adminMiddleware, async (req, res) => {
     try {
@@ -45,7 +70,9 @@ router.post("/grant-premium", authMiddleware, adminMiddleware, async (req, res) 
         }
 
         user.isApproved = true;
-        user.assignedCourse = course;
+
+        // ✅ ONLY FIX (full string preserved, just cleaned)
+        user.assignedCourse = course.trim().replace(/\s+/g, " ");
 
         await user.save();
 
@@ -60,7 +87,7 @@ router.post("/grant-premium", authMiddleware, adminMiddleware, async (req, res) 
     }
 });
 
-/* ================= TAKE PREMIUM (VIDEO) ================= */
+/* ================= TAKE PREMIUM ================= */
 router.post("/take-premium", authMiddleware, adminMiddleware, async (req, res) => {
     try {
         const { email, secretCode } = req.body;
@@ -96,9 +123,11 @@ router.post("/grant-access", authMiddleware, adminMiddleware, async (req, res) =
             return res.json({ success: false });
         }
 
+        user.permissions = user.permissions || {};
+        user.permissions.ebook = user.permissions.ebook || {};
         user.permissions.ebook.access = true;
-        user.markModified("permissions");
 
+        user.markModified("permissions");
         await user.save();
 
         res.json({
@@ -122,9 +151,11 @@ router.post("/take-access", authMiddleware, adminMiddleware, async (req, res) =>
             return res.json({ success: false });
         }
 
+        user.permissions = user.permissions || {};
+        user.permissions.ebook = user.permissions.ebook || {};
         user.permissions.ebook.access = false;
-        user.markModified("permissions");
 
+        user.markModified("permissions");
         await user.save();
 
         res.json({

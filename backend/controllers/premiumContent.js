@@ -1,84 +1,56 @@
 const PremiumContent = require("../models/PremiumContent");
 
-/* ========== CREATE ========== */
+/* ========== ADMIN CREATE ========== */
 exports.create = async (req, res) => {
-    try {
-        const data = new PremiumContent({
-            subject: req.body.subject,
-            topicName: req.body.topicName,
-            videoLink: req.body.videoLink,
-            pdfLink: req.file ? req.file.path : "",
-        });
+    const content = await PremiumContent.create({
+        subject: req.body.subject.trim().toLowerCase(),
+        topicName: req.body.topicName.trim(),
+        videoLink: req.body.videoLink || "",
+        pdfLink: req.file ? req.file.path : ""
+    });
 
-        await data.save();
-
-        res.json({
-            success: true,
-            data
-        });
-    } catch (err) {
-        res.status(500).json({
-            success: false,
-            message: err.message
-        });
-    }
+    res.status(201).json({
+        success: true,
+        data: content
+    });
 };
 
-/* ========== READ ALL (ADMIN) ========== */
+/* ========== ADMIN READ ALL ========== */
 exports.getAll = async (req, res) => {
     const data = await PremiumContent.find().sort({ createdAt: -1 });
-    res.json(data);
+    res.json({ success: true, data });
 };
 
-exports.getUserPremium = async (req, res) => {
-    try {
-        const filter =
-            req.user.role === "admin"
-                ? {}                  // ✅ admin → all content
-                : { isHidden: false } // ✅ user → only visible
-
-        const contents = await PremiumContent
-            .find(filter)
-            .sort({ createdAt: 1 });
-
-        res.json({
-            success: true,
-            data: contents
-        });
-    } catch (err) {
-        res.status(500).json({
-            success: false,
-            message: err.message
-        });
-    }
-};
-
-/* ========== UPDATE ========== */
+/* ========== ADMIN UPDATE ========== */
 exports.update = async (req, res) => {
-    const updateData = {
-        subject: req.body.subject,
-        topicName: req.body.topicName,
-        videoLink: req.body.videoLink
-    };
+    const updateData = {};
 
-    if (req.file) {
+    if (req.body.subject)
+        updateData.subject = req.body.subject.trim().toLowerCase();
+
+    if (req.body.topicName)
+        updateData.topicName = req.body.topicName.trim();
+
+    if (req.body.videoLink !== undefined)
+        updateData.videoLink = req.body.videoLink;
+
+    if (req.file)
         updateData.pdfLink = req.file.path;
-    }
-
+    
     await PremiumContent.findByIdAndUpdate(req.params.id, updateData);
-    res.json({ success: true });
+    res.json({ success: true, message: "Updated" });
 };
 
-/* ========== TOGGLE HIDE ========== */
+/* ========== ADMIN TOGGLE HIDE ========== */
 exports.toggle = async (req, res) => {
-    const item = await PremiumContent.findById(req.params.id);
-    item.isHidden = !item.isHidden;
-    await item.save();
+    const content = await PremiumContent.findById(req.params.id);
+    content.isHidden = !content.isHidden;
+    await content.save();
     res.json({ success: true });
 };
 
-/* ========== DELETE ========== */
+/* ========== ADMIN DELETE ========== */
 exports.remove = async (req, res) => {
     await PremiumContent.findByIdAndDelete(req.params.id);
-    res.json({ success: true });
+    res.json({ success: true, message: "Deleted" });
 };

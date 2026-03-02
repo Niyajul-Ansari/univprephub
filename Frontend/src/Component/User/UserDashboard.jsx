@@ -22,7 +22,9 @@ export default function UserDashboard() {
         return match ? match[1] : null;
     };
 
-    const videoId = getYouTubeID(selectedTopic?.videoUrl);
+    const videoId = selectedTopic?.videoUrl
+        ? getYouTubeID(selectedTopic.videoUrl)
+        : null;
 
     useEffect(() => {
         if (!videoRef.current || !videoId) return;
@@ -60,10 +62,17 @@ export default function UserDashboard() {
         return res.json();
     };
 
-    const fetchPremium = async () => {
-        const res = await fetch(`${BACKEND_URL}/user/premium`, {
-            credentials: "include",
+    const fetchPremium = async (user) => {
+        const isAdmin = user?.role === "admin";
+
+        const url = isAdmin
+            ? `${BACKEND_URL}/admin/premium-content`
+            : `${BACKEND_URL}/user/premium`;
+
+        const res = await fetch(url, {
+            credentials: "include"
         });
+
         if (res.status === 401) return null;
         return res.json();
     };
@@ -87,7 +96,9 @@ export default function UserDashboard() {
                         subject: item.subject,
                         videoUrl: item.videoLink,
                         pdfUrl: item.pdfLink
-                            ? `${BACKEND_URL}/${item.pdfLink}`
+                            ? item.pdfLink.startsWith("http")
+                                ? item.pdfLink
+                                : `${BACKEND_URL}/${item.pdfLink.replace(/\\/g, "/")}`
                             : null,
                     }));
 
@@ -177,10 +188,10 @@ export default function UserDashboard() {
                     ))}
                 </div>
 
-                {/* ---------------- RIGHT SIDE (HEADER + CONTENT SCROLL TOGETHER) ---------------- */}
+                {/* ---------------- RIGHT SIDE ---------------- */}
                 <div className="flex-1 h-full overflow-hidden">
                     <main className="h-full overflow-y-auto">
-                        {/* HEADER (SCROLLS WITH CONTENT) */}
+                        {/* HEADER */}
                         <div className="h-16 bg-white shadow-sm flex items-center justify-between px-6">
                             <div className="flex items-center gap-3">
                                 <button
@@ -196,7 +207,13 @@ export default function UserDashboard() {
 
                             <div className="flex items-center gap-4">
                                 <img
-                                    src={user?.avatar}
+                                    src={
+                                        user?.avatar
+                                            ? user.avatar.startsWith("http")
+                                                ? user.avatar
+                                                : `${BACKEND_URL}${user.avatar}`
+                                            : "https://i.pravatar.cc/40"
+                                    }
                                     alt="User"
                                     className="w-10 h-10 rounded-full border"
                                 />
@@ -238,17 +255,14 @@ export default function UserDashboard() {
                                     {selectedTopic?.title} – Notes
                                 </h2>
 
-                                {/* ===== PDF AVAILABLE ===== */}
-                                {selectedTopic?.pdfUrl && selectedTopic.pdfUrl.trim() !== "" ? (
+                                {selectedTopic?.pdfUrl ? (
                                     <div className="relative h-[85vh] overflow-y-auto bg-white border rounded-lg">
-                                        {/* PDF VIEW */}
                                         <object
                                             data={selectedTopic.pdfUrl}
                                             type="application/pdf"
                                             className="w-full h-full"
                                         />
 
-                                        {/* TOP OVERLAY (ONLY WHEN PDF EXISTS) */}
                                         <div className="absolute top-0 left-0 w-full h-[60px] bg-yellow-100 z-20 flex items-center justify-center">
                                             <span className="text-xl font-bold p-2">
                                                 Join our official course : 9891460883
@@ -256,7 +270,6 @@ export default function UserDashboard() {
                                         </div>
                                     </div>
                                 ) : (
-                                    /* ===== EMPTY STATE ===== */
                                     <div className="h-40 flex flex-col items-center justify-center bg-gray-50 border border-dashed rounded-lg text-gray-500">
                                         <span className="text-lg font-medium">
                                             Notes not available

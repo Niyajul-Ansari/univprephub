@@ -52,12 +52,11 @@ export default function PremiumContent() {
                 { credentials: "include" }
             );
 
-            const data = await res.json();
-            console.log("FULL API RESPONSE:", data);
+            const json = await res.json();
+            console.log("FULL API RESPONSE:", json);
 
-            // Backend direct array bhej raha hai
-            if (Array.isArray(data)) {
-                setContents(data);
+            if (json.success && Array.isArray(json.data)) {
+                setContents(json.data);   // ✅ CORRECT
             } else {
                 setContents([]);
             }

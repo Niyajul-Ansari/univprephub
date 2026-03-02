@@ -2,14 +2,29 @@ const mongoose = require("mongoose");
 
 const premiumContentSchema = new mongoose.Schema(
     {
-        subject: String,
-        topicName: String,
-        videoLink: String,
+        subject: {
+            type: String,
+            required: true,
+            lowercase: true,
+            trim: true
+        },
+        topicName: {
+            type: String,
+            required: true,
+            trim: true
+        },
+        videoLink: {
+            type: String,
+            default: ""
+        },
         pdfLink: {
             type: String,
             default: ""
         },
-        isHidden: { type: Boolean, default: false },
+        isHidden: {
+            type: Boolean,
+            default: false
+        }
     },
     { timestamps: true }
 );
