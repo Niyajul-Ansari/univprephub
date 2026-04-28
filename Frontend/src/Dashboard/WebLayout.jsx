@@ -2,6 +2,7 @@ import { useState } from "react";
 import Header from "../Component/Web/Header";
 import AuthModal from "../Component/Web/AuthModal";
 import MainDashboard from "../Component/Web/MainDashboard";
+import HeroSlider from "../Component/Web/HeroSlider";
 
 export default function WebLayout() {
     const [showAuth, setShowAuth] = useState(false);
@@ -12,6 +13,7 @@ export default function WebLayout() {
             {/* ✅ Header ALWAYS visible */}
             <Header onLoginClick={() => setShowAuth(true)} />
 
+            <HeroSlider/>
             {/* ✅ Main Dashboard ALWAYS visible (testing purpose) */}
             <MainDashboard />
 
